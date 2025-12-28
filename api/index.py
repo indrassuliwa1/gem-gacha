@@ -29,9 +29,7 @@ def pull_gacha():
         "result": result
     })
 
-@app.route('/')
-def home():
-    return "Gacha API is Running!"
+
 
 # Ini penting untuk Vercel
 if __name__ == '__main__':
