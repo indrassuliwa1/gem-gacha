@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystic Gacha RPG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        h1, .font-tech { font-family: 'Orbitron', sans-serif; }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shaking { animation: shake 0.5s infinite; }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        .glow-gray { box-shadow: 0 0 15px rgba(156, 163, 175, 0.5); border-color: #9CA3AF; }
+        .glow-blue { box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); border-color: #3B82F6; }
+        .glow-purple { box-shadow: 0 0 35px rgba(168, 85, 247, 0.9); border-color: #A855F7; }
+        .glow-gold { 
+            box-shadow: 0 0 50px rgba(234, 179, 8, 1); 
+            border-color: #EAB308;
+            background: linear-gradient(135deg, #422006 0%, #1a1a1a 100%);
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-white flex flex-col items-center justify-center min-h-screen overflow-hidden relative">
+
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+    </div>
+
+    <div class="absolute top-5 right-5 z-50">
+        <div class="flex items-center gap-2 bg-slate-800/80 border border-yellow-500/50 px-4 py-2 rounded-full shadow-lg backdrop-blur-md">
+            <span class="text-2xl">🪙</span>
+            <div class="flex flex-col items-end">
+                <span id="coin-display" class="font-tech text-yellow-400 font-bold text-xl leading-none">0</span>
+                <span class="text-[10px] text-slate-400 uppercase tracking-widest">Gold Coins</span>
+            </div>
+            <button onclick="addCoins()" class="ml-2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 transition" title="Top Up (Cheat)">
+                +
+            </button>
+        </div>
+    </div>
+
+    <div class="text-center mb-10 z-10 mt-10">
+        <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 drop-shadow-lg">
+            MYSTIC SUMMON
+        </h1>
+        <p class="text-slate-400 mt-2 text-sm tracking-widest">TEST YOUR LUCK</p>
+    </div>
+
+    <div class="relative w-64 h-80 flex items-center justify-center mb-8">
+        
+        <div id="orb" class="absolute w-40 h-40 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-[0_0_60px_rgba(168,85,247,0.6)] flex items-center justify-center transition-all duration-300 transform hover:scale-105 cursor-pointer z-20">
+            <span class="text-6xl animate-pulse">🔮</span>
+        </div>
+
+        <div id="result-card" class="hidden absolute w-full h-full bg-slate-800 rounded-2xl border-4 flex flex-col items-center justify-between p-6 transition-all duration-500 z-30">
+            <div id="rarity-badge" class="px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-black/30 backdrop-blur-sm">
+                Common
+            </div>
+            
+            <div class="text-6xl my-4 filter drop-shadow-md">
+                🐟
+            </div>
+
+            <div class="text-center">
+                <h2 id="item-name" class="text-xl font-bold text-white leading-tight">...</h2>
+                <p class="text-xs text-slate-400 mt-2">Item received</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="z-10 flex flex-col items-center gap-2">
+        <button onclick="startGacha()" id="gacha-btn" class="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-purple-500 font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all hover:shadow-[0_0_40px_rgba(168,85,247,0.8)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:filter-none">
+            <span class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-600 to-blue-600 opacity-50 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <span class="relative flex items-center gap-2">
+                SUMMON x1 <span class="text-xs bg-black/20 px-2 py-0.5 rounded text-yellow-300">100 G</span>
+            </span>
+        </button>
+        <div id="error-msg" class="text-red-400 text-sm font-semibold h-5 opacity-0 transition-opacity">
+            Uang tidak cukup! Top up dulu.
+        </div>
+    </div>
+
+    <script>
+        // === LOGIKA UANG (CLIENT SIDE) ===
+        let coins = 0;
+        const GACHA_COST = 100;
+
+        // Saat web dibuka, cek sisa uang di LocalStorage
+        window.onload = function() {
+            const savedCoins = localStorage.getItem('gachaCoins');
+            if (savedCoins === null) {
+                // Modal awal player baru
+                coins = 1000; 
+            } else {
+                coins = parseInt(savedCoins);
+            }
+            updateCoinDisplay();
+        };
+
+        function updateCoinDisplay() {
+            const display = document.getElementById('coin-display');
+            display.innerText = coins;
+            // Simpan ke browser biar ga ilang pas refresh
+            localStorage.setItem('gachaCoins', coins);
+            
+            // Cek tombol disable kalo miskin
+            const btn = document.getElementById('gacha-btn');
+            if(coins < GACHA_COST) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                // Jangan di disable property-nya biar bisa klik untuk munculin pesan error
+            } else {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function addCoins() {
+            coins += 500;
+            updateCoinDisplay();
+            // Animasi kecil feedback
+            const display = document.getElementById('coin-display');
+            display.style.color = '#4ade80'; // Hijau
+            setTimeout(() => display.style.color = '#fbbf24', 300); // Balik Kuning
+            
+            // Sembunyikan error kalau ada
+            document.getElementById('error-msg').style.opacity = '0';
+        }
+        // =================================
+
+        const colorMap = { 'gray': 'glow-gray', 'blue': 'glow-blue', 'purple': 'glow-purple', 'gold': 'glow-gold' };
+        const rarityColorText = { 'gray': 'text-gray-400', 'blue': 'text-blue-400', 'purple': 'text-purple-400', 'gold': 'text-yellow-400' };
+
+        async function startGacha() {
+            const btn = document.getElementById('gacha-btn');
+            const errorMsg = document.getElementById('error-msg');
+
+            // 1. Cek Uang Dulu!
+            if (coins < GACHA_COST) {
+                errorMsg.style.opacity = '1';
+                shakeButton(btn);
+                return; // Stop, jangan panggil server
+            }
+
+            // 2. Potong Uang
+            coins -= GACHA_COST;
+            updateCoinDisplay();
+            errorMsg.style.opacity = '0';
+
+            // Mulai Proses Gacha
+            const orb = document.getElementById('orb');
+            const card = document.getElementById('result-card');
+            
+            card.classList.add('hidden');
+            card.className = "hidden absolute w-full h-full bg-slate-800 rounded-2xl border-4 flex flex-col items-center justify-between p-6 transition-all duration-500 z-30"; 
+            
+            orb.classList.remove('hidden', 'scale-0');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="relative">CHANNELLING...</span>`;
+            orb.classList.add('shaking');
+
+            try {
+                // Panggil Python
+                const response = await fetch('/api/pull'); 
+                const data = await response.json();
+                const item = data.result;
+
+                await new Promise(r => setTimeout(r, 1500));
+
+                document.getElementById('item-name').innerText = item.name;
+                const rarityBadge = document.getElementById('rarity-badge');
+                rarityBadge.innerText = item.rarity;
+                rarityBadge.className = `px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-black/50 backdrop-blur-sm ${rarityColorText[item.color]}`;
+
+                const glowClass = colorMap[item.color] || 'glow-gray';
+                card.classList.add(glowClass);
+
+                orb.classList.remove('shaking');
+                orb.classList.add('hidden');
+                
+                card.classList.remove('hidden');
+                card.classList.add('pop-in');
+
+                if (item.color === 'gold') fireConfetti();
+
+            } catch (error) {
+                console.error(error);
+                alert("Server Error. Uang dikembalikan.");
+                coins += GACHA_COST; // Refund kalau error
+                updateCoinDisplay();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="relative flex items-center gap-2">SUMMON AGAIN <span class="text-xs bg-black/20 px-2 py-0.5 rounded text-yellow-300">100 G</span></span>`;
+            }
+        }
+
+        function shakeButton(element) {
+            element.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-5px)' },
+                { transform: 'translateX(5px)' },
+                { transform: 'translateX(0)' }
+            ], { duration: 200 });
+        }
+
+        function fireConfetti() {
+            var duration = 2 * 1000;
+            var end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700', '#FFA500'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700', '#FFA500'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+    </script>
+</body>
+</html>
